@@ -1,21 +1,25 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>برنامج قياس مؤشرات الأداء</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>نظام إدارة مؤشرات الأداء والمسالخ - v6.0 (Notifications)</title>
     
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- React & ReactDOM -->
+    <!-- React & ReactDOM (UMD) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
-    <!-- React Router -->
+    <!-- React Router (UMD) -->
     <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
     <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
     <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
@@ -42,7 +46,7 @@
       }
     </script>
     <style>
-      body { font-family: 'Cairo', sans-serif; background-color: #f3f4f6; }
+      body { font-family: 'Cairo', sans-serif; background-color: #f8f9fa; }
       
       /* Print Styles */
       @media print {
@@ -50,7 +54,8 @@
         body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .no-print { display: none !important; }
         ::-webkit-scrollbar { display: none; }
-        .rotate-text-fix { transform: rotate(-90deg) !important; -webkit-transform: rotate(-90deg) !important; }
+        .rotate-text-fix { transform: rotate(-90deg) !important; -webkit-transform: rotate(-90deg) !important; width: 50px; display: block; margin: 0 auto; white-space: nowrap; }
+        .page-break { page-break-after: always; }
       }
     </style>
 <script type="importmap">
@@ -68,10 +73,17 @@
     <div id="root"></div>
 
     <script type="text/babel" data-presets="typescript,react">
+        // ==========================================
+        // 0. GLOBAL IMPORTS (UMD)
+        // ==========================================
         const { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } = ReactRouterDOM;
         const { useState, useEffect, useContext, createContext, Fragment } = React;
 
-        // --- TYPES & CONSTANTS ---
+        const APP_VERSION = "v6.0 (Notifications Enabled)";
+
+        // ==========================================
+        // 1. DATA CONSTANTS & TYPES
+        // ==========================================
         const UserRole = {
             ADMIN: 'ADMIN',
             DEPT_MANAGER: 'DEPT_MANAGER',
@@ -79,15 +91,6 @@
             CONTRACTOR: 'CONTRACTOR',
             USER: 'USER'
         };
-
-        const INVOICE_EMPLOYEE_STRUCTURE = [
-            { role: 'مشرف المسلخ', count: 1, monthlySalary: 4500, dailySalary: 150 },
-            { role: 'مشرف النظافة', count: 1, monthlySalary: 4500, dailySalary: 150 },
-            { role: 'محاسب', count: 1, monthlySalary: 3500, dailySalary: 117 },
-            { role: 'قصاب', count: 9, monthlySalary: 2500, dailySalary: 83 },
-            { role: 'عامل نظافة', count: 5, monthlySalary: 2300, dailySalary: 77 },
-            { role: 'حمال', count: 1, monthlySalary: 2300, dailySalary: 77 },
-        ];
 
         const INITIAL_USERS = [
             { id: '70062', name: 'مصعب علي', role: UserRole.ADMIN },
@@ -111,15 +114,8 @@
             { id: 'e6', name: 'راجو كومار', jobTitle: 'قصاب', salary: 2300, facilityId: '1' },
             { id: 'e7', name: 'عمر', jobTitle: 'قصاب', salary: 2300, facilityId: '1' },
             { id: 'e8', name: 'انور ', jobTitle: 'قصاب', salary: 2300, facilityId: '1' },
-            { id: 'e9', name: 'يوسف ', jobTitle: 'قصاب', salary: 2300, facilityId: '1' },
-            { id: 'e10', name: 'راجو كومار', jobTitle: 'قصاب', salary: 2300, facilityId: '1' },
-            { id: 'e11', name: 'راجو كومار', jobTitle: 'قصاب', salary: 2300, facilityId: '1' },
-            { id: 'e12', name: 'خالد ', jobTitle: 'قصاب', salary: 2300, facilityId: '1' },
             { id: 'e13', name: 'مصطفي', jobTitle: 'عامل نظافة', salary: 2300, facilityId: '1' },
             { id: 'e14', name: 'سيد ', jobTitle: 'عامل نظافة', salary: 2300, facilityId: '1' },
-            { id: 'e15', name: 'معتز ', jobTitle: 'عامل نظافة', salary: 2300, facilityId: '1' },
-            { id: 'e16', name: 'راجو سون', jobTitle: 'عامل نظافة', salary: 2300, facilityId: '1' },
-            { id: 'e17', name: 'طاهر ', jobTitle: 'عامل نظافة', salary: 2300, facilityId: '1' },
             { id: 'e18', name: 'ايمن  ', jobTitle: 'حمال', salary: 2300, facilityId: '1' },
         ];
 
@@ -166,7 +162,9 @@
             { id: 'i19', name: 'تقرير الذبيح اليومي', category: 'ADMIN', linkedViolationId: 'v2' },
         ];
 
-        // --- STORAGE SERVICE ---
+        // ==========================================
+        // 2. DATA SERVICE & NOTIFICATION SERVICE
+        // ==========================================
         const getStorage = (key, defaultVal) => {
             const stored = localStorage.getItem(key);
             if (!stored) return defaultVal;
@@ -176,6 +174,29 @@
         const setStorage = (key, val) => {
             localStorage.setItem(key, JSON.stringify(val));
             window.dispatchEvent(new Event('storage-update')); 
+        };
+
+        const NotificationService = {
+            requestPermission: () => {
+                if (!("Notification" in window)) return;
+                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    Notification.requestPermission();
+                }
+            },
+            send: (title, body) => {
+                if (!("Notification" in window)) return;
+                if (Notification.permission === "granted") {
+                    try {
+                        new Notification(title, {
+                            body: body,
+                            icon: 'https://cdn-icons-png.flaticon.com/512/1827/1827301.png', 
+                            dir: 'rtl'
+                        });
+                    } catch (e) {
+                        console.log('Notification error', e);
+                    }
+                }
+            }
         };
 
         const DataService = {
@@ -192,7 +213,7 @@
                     const list = getStorage('evaluations', []);
                     const existingIdx = list.findIndex(e => e.date === entry.date && e.facilityId === entry.facilityId);
                     if (existingIdx >= 0) {
-                        list[existingIdx] = entry; // REPLACE
+                        list[existingIdx] = entry; // UPSERT
                     } else {
                         list.push(entry); // ADD
                     }
@@ -206,7 +227,9 @@
             settings: { get: () => getStorage('appSettings', {}), save: (v) => setStorage('appSettings', v) }
         };
 
-        // --- TOAST COMPONENT ---
+        // ==========================================
+        // 3. COMMON COMPONENTS (TOAST)
+        // ==========================================
         const ToastContext = createContext(null);
         const useToast = () => {
             const context = useContext(ToastContext);
@@ -219,7 +242,7 @@
             const bgClass = type === 'error' ? 'bg-red-600' : 'bg-green-600';
             const iconClass = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
             return (
-                <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 ${bgClass} text-white px-6 py-3 rounded-lg shadow-xl z-[9999] flex items-center gap-2`}>
+                <div className={`fixed top-4 left-1/2 transform -translate-x-1/2 ${bgClass} text-white px-6 py-3 rounded-lg shadow-xl z-[9999] flex items-center gap-2 animate-bounce`}>
                     <i className={`fa ${iconClass} text-xl`}></i><span className="font-bold">{message}</span>
                 </div>
             );
@@ -236,8 +259,9 @@
             );
         };
 
-        // --- AUTH & LAYOUT COMPONENTS ---
-        // DEFINED HERE BEFORE APP USES THEM
+        // ==========================================
+        // 4. AUTH & LAYOUT COMPONENTS
+        // ==========================================
         const Login = ({ onLogin }) => {
             const [id, setId] = useState('');
             const [error, setError] = useState('');
@@ -245,17 +269,20 @@
             const handleLogin = (e) => {
                 e.preventDefault();
                 const u = DataService.users.getAll().find(u => u.id === id);
-                if(u) onLogin(u); else setError('الرمز الوظيفي غير صحيح');
+                if(u) {
+                    onLogin(u);
+                    NotificationService.requestPermission(); // Request Notification Access
+                } else setError('الرمز الوظيفي غير صحيح');
             };
             return (
-                <div className="min-h-screen flex items-center justify-center bg-gray-800 relative">
+                <div className="min-h-screen flex items-center justify-center bg-gray-900 relative">
                      {settings.logo && <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{backgroundImage: `url(${settings.logo})`}}></div>}
-                    <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md z-10 text-center">
-                        <h2 className="text-2xl font-bold mb-6 text-gold-dark">تسجيل الدخول</h2>
+                    <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md z-10 text-center border-t-4 border-gold">
+                        <h2 className="text-3xl font-bold mb-6 text-gray-800">تسجيل الدخول</h2>
                         <form onSubmit={handleLogin} className="space-y-6">
-                            <input value={id} onChange={e => setId(e.target.value)} className="w-full px-4 py-3 border rounded text-center text-xl tracking-widest" placeholder="الرمز الوظيفي" autoFocus />
-                            {error && <p className="text-red-500 text-sm">{error}</p>}
-                            <button className="w-full bg-gold hover:bg-gold-dark text-white font-bold py-3 px-4 rounded">دخول</button>
+                            <input value={id} onChange={e => setId(e.target.value)} className="w-full px-4 py-3 border rounded text-center text-xl tracking-widest focus:ring-2 focus:ring-gold outline-none" placeholder="الرمز الوظيفي" autoFocus />
+                            {error && <p className="text-red-500 text-sm font-bold">{error}</p>}
+                            <button className="w-full bg-gold hover:bg-gold-dark text-white font-bold py-3 px-4 rounded transition-colors shadow-lg">دخول</button>
                         </form>
                     </div>
                 </div>
@@ -267,7 +294,9 @@
             const location = useLocation();
             const [isSidebarOpen, setIsSidebarOpen] = useState(true);
             const [vCount, setVCount] = useState(0);
-            const [kpiCount, setKpiCount] = useState(0);
+            const [kpiBadgeCount, setKpiBadgeCount] = useState(0);
+            const [reportBadgeCount, setReportBadgeCount] = useState(0);
+            const [invoiceBadgeCount, setInvoiceBadgeCount] = useState(0);
             const [time, setTime] = useState(new Date());
             const settings = DataService.settings.get();
 
@@ -275,64 +304,88 @@
 
             useEffect(() => {
                 const update = () => {
+                    // 1. Violations Badge (For Admin/User/Managers)
                     const allV = DataService.violations.getAll();
                     setVCount(allV.filter(v => (currentUser.role === UserRole.ADMIN || v.facilityId === currentUser.facilityId) && v.status === 'OPEN').length);
                     
+                    // 2. KPI Approval Badges
                     const allK = DataService.kpiReports.getAll();
                     let kc = 0;
                     if (currentUser.role === UserRole.CONTRACTOR) kc = allK.filter(k => k.facilityId === currentUser.facilityId && k.status === 'SUBMITTED').length;
                     else if (currentUser.role === UserRole.DEPT_MANAGER) kc = allK.filter(k => k.status === 'CONTRACTOR_APPROVED').length;
-                    else if ([UserRole.ADMIN, UserRole.SECTION_HEAD].includes(currentUser.role)) kc = allK.filter(k => k.status === 'SUBMITTED' || k.status === 'CONTRACTOR_APPROVED').length;
-                    setKpiCount(kc);
+                    else if ([UserRole.ADMIN].includes(currentUser.role)) kc = allK.filter(k => k.status === 'SUBMITTED' || k.status === 'CONTRACTOR_APPROVED').length;
+                    setKpiBadgeCount(kc);
+
+                    // 3. Report Approval Badges
+                    const allR = DataService.monthlyReports.getAll();
+                    let rc = 0;
+                    if (currentUser.role === UserRole.SECTION_HEAD) rc = allR.filter(r => r.submitted && !r.approvedBySectionHead).length;
+                    else if (currentUser.role === UserRole.CONTRACTOR) rc = allR.filter(r => r.submitted && !r.approvedByContractor).length;
+                    else if (currentUser.role === UserRole.ADMIN) rc = allR.filter(r => r.submitted && (!r.approvedBySectionHead || !r.approvedByContractor)).length;
+                    setReportBadgeCount(rc);
+
+                    // 4. Invoice Approval Badges
+                    const allInv = DataService.invoices.getAll();
+                    let ic = 0;
+                    if (currentUser.role === UserRole.CONTRACTOR) ic = allInv.filter(i => i.facilityId === currentUser.facilityId && i.status === 'SUBMITTED' && !i.approvals.contractor).length;
+                    else if (currentUser.role === UserRole.DEPT_MANAGER) ic = allInv.filter(i => i.status === 'SUBMITTED' && !i.approvals.deptManager).length; 
+                    else if (currentUser.role === UserRole.ADMIN) ic = allInv.filter(i => i.status === 'SUBMITTED' && (!i.approvals.contractor || !i.approvals.deptManager)).length;
+                    setInvoiceBadgeCount(ic);
                 };
                 update();
                 window.addEventListener('storage-update', update);
-                const p = setInterval(update, 5000);
+                const p = setInterval(update, 3000);
                 return () => { window.removeEventListener('storage-update', update); clearInterval(p); };
             }, [currentUser]);
 
             const menu = [
                 { label: 'التقييم اليومي', path: '/daily-evaluation', icon: 'fa-calendar-check', roles: [UserRole.ADMIN, UserRole.USER] },
-                { label: 'المخالفات', path: '/violations', icon: 'fa-exclamation-triangle', badge: vCount, roles: [UserRole.ADMIN, UserRole.USER, UserRole.DEPT_MANAGER, UserRole.SECTION_HEAD] },
-                { label: 'التقييم الشهري', path: '/monthly-evaluation', icon: 'fa-table' },
-                { label: 'التقرير الشهري', path: '/monthly-report', icon: 'fa-file-text' },
-                { label: 'مؤشر الأداء', path: '/kpi', icon: 'fa-chart-pie', badge: kpiCount },
-                { label: 'الفاتورة الشهرية', path: '/invoice', icon: 'fa-file-invoice-dollar' },
+                { label: 'المخالفات', path: '/violations', icon: 'fa-exclamation-triangle', badge: vCount, roles: [UserRole.ADMIN, UserRole.USER, UserRole.DEPT_MANAGER, UserRole.SECTION_HEAD, UserRole.CONTRACTOR] },
+                { label: 'التقييم الشهري', path: '/monthly-evaluation', icon: 'fa-table', roles: [UserRole.ADMIN, UserRole.USER, UserRole.DEPT_MANAGER, UserRole.SECTION_HEAD, UserRole.CONTRACTOR] },
+                { label: 'التقرير الشهري', path: '/monthly-report', icon: 'fa-file-text', badge: reportBadgeCount, roles: [UserRole.ADMIN, UserRole.USER, UserRole.DEPT_MANAGER, UserRole.SECTION_HEAD, UserRole.CONTRACTOR] },
+                { label: 'مؤشر الأداء', path: '/kpi', icon: 'fa-chart-pie', badge: kpiBadgeCount, roles: [UserRole.ADMIN, UserRole.USER, UserRole.DEPT_MANAGER, UserRole.SECTION_HEAD, UserRole.CONTRACTOR] },
+                { label: 'الفاتورة الشهرية', path: '/invoice', icon: 'fa-file-invoice-dollar', badge: invoiceBadgeCount, roles: [UserRole.ADMIN, UserRole.USER, UserRole.DEPT_MANAGER, UserRole.SECTION_HEAD, UserRole.CONTRACTOR] },
                 { label: 'العمالة الإضافية', path: '/extra-labor', icon: 'fa-users-cog', roles: [UserRole.ADMIN, UserRole.USER] },
                 { label: 'الاعدادات', path: '/settings', icon: 'fa-cogs', roles: [UserRole.ADMIN] },
             ];
 
             const dateStr = time.toLocaleDateString('ar-AE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const timeStr = time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
             return (
                 <div className="flex h-screen bg-gray-100 overflow-hidden" dir="rtl">
-                    <div className={`${isSidebarOpen ? 'w-64' : 'w-0'} bg-white shadow-lg transition-all duration-300 flex flex-col no-print`}>
-                        <div className="h-[150px] flex items-center justify-center border-b p-4">{settings.logo ? <img src={settings.logo} className="max-h-full object-contain" /> : <i className="fa fa-image fa-3x text-gray-400"></i>}</div>
+                    <div className={`${isSidebarOpen ? 'w-64' : 'w-0'} bg-white shadow-lg transition-all duration-300 flex flex-col no-print z-20`}>
+                        <div className="h-[150px] flex items-center justify-center border-b p-4 bg-gray-50">{settings.logo ? <img src={settings.logo} className="max-h-full object-contain" /> : <i className="fa fa-image fa-3x text-gray-400"></i>}</div>
                         <div className="flex-1 overflow-y-auto py-4">
                             {menu.filter(i => !i.roles || i.roles.includes(currentUser.role)).map(i => (
-                                <button key={i.path} onClick={() => navigate(i.path)} className={`w-full flex items-center px-6 py-3 text-right hover:bg-gold-light hover:text-white transition-colors ${location.pathname === i.path ? 'bg-gold text-white' : 'text-gray-700'}`}>
-                                    <i className={`fa ${i.icon} w-8 ml-2`}></i><span className="flex-1 font-semibold">{i.label}</span>{i.badge > 0 && <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 animate-pulse min-w-[20px] text-center">{i.badge}</span>}
+                                <button key={i.path} onClick={() => navigate(i.path)} className={`w-full flex items-center px-6 py-3 text-right hover:bg-gold-light hover:text-white transition-colors border-l-4 ${location.pathname === i.path ? 'bg-gold text-white border-gold-dark' : 'text-gray-700 border-transparent'}`}>
+                                    <i className={`fa ${i.icon} w-8 ml-2`}></i><span className="flex-1 font-semibold">{i.label}</span>{i.badge > 0 && <span className="bg-red-600 text-white text-xs rounded-full px-2 py-0.5 animate-pulse min-w-[20px] text-center font-bold shadow">{i.badge}</span>}
                                 </button>
                             ))}
                         </div>
-                        <div className="p-4 border-t text-center"><div className="mb-2 text-xs text-gray-500">{currentUser.name} ({currentUser.role})</div><button onClick={onLogout} className="w-full bg-red-50 text-red-600 py-2 rounded hover:bg-red-100"><i className="fa fa-sign-out-alt ml-2"></i> خروج</button></div>
+                        <div className="p-4 border-t text-center bg-gray-50">
+                            <div className="mb-2 text-xs font-bold text-gray-700">{currentUser.name} <span className="block text-gray-500 font-normal">({currentUser.role})</span></div>
+                            <div className="text-[10px] text-gray-400 mb-2">{APP_VERSION}</div>
+                            <button onClick={onLogout} className="w-full bg-red-100 text-red-600 py-2 rounded hover:bg-red-200 transition-colors"><i className="fa fa-sign-out-alt ml-2"></i> خروج</button>
+                        </div>
                     </div>
                     <div className="flex-1 flex flex-col min-w-0">
-                        <header className="h-[60px] bg-gold text-white flex items-center justify-between px-6 shadow-md no-print">
-                            <div className="flex items-center"><button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-white hover:text-gray-200"><i className="fa fa-bars fa-lg"></i></button><h1 className="mr-4 text-xl font-bold hidden sm:block">برنامج قياس مؤشرات الأداء</h1></div>
-                            <div className="flex flex-col items-end text-sm font-semibold leading-tight">
-                                <span className="text-xs opacity-90">{dateStr}</span>
-                                <span className="bg-black/10 px-2 rounded font-mono dir-ltr">{timeStr}</span>
+                        <header className="h-[70px] bg-gold text-white flex items-center justify-between px-6 shadow-md no-print z-10">
+                            <div className="flex items-center"><button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-white hover:text-gray-100 mr-2 transition-transform active:scale-95"><i className="fa fa-bars fa-lg"></i></button><h1 className="mr-4 text-xl font-bold hidden sm:block tracking-wide">برنامج قياس مؤشرات الأداء</h1></div>
+                            <div className="flex flex-col items-end text-sm font-semibold leading-tight bg-black/20 px-4 py-2 rounded-lg backdrop-blur-sm">
+                                <span className="text-xs opacity-90 mb-1">{dateStr}</span>
+                                <span className="font-mono text-lg dir-ltr">{timeStr}</span>
                             </div>
                         </header>
-                        <main className="flex-1 overflow-auto p-4 sm:p-6 print:p-0 print:overflow-visible">{children}</main>
+                        <main className="flex-1 overflow-auto p-4 sm:p-6 print:p-0 print:overflow-visible bg-gray-100">{children}</main>
                     </div>
                 </div>
             );
         };
 
-        // --- PAGE COMPONENTS ---
+        // ==========================================
+        // 5. PAGE COMPONENTS
+        // ==========================================
         const SettingsPage = () => {
             const { showToast } = useToast();
             const [activeTab, setActiveTab] = useState('GENERAL');
@@ -413,9 +466,9 @@
             };
 
             const Tabs = ({ tabs, active, onChange }) => (
-                <div className="flex border-b mb-6 overflow-x-auto">
+                <div className="flex border-b mb-6 overflow-x-auto bg-gray-50 rounded-t-lg">
                     {tabs.map(t => (
-                        <button key={t.id} onClick={() => onChange(t.id)} className={`px-6 py-3 whitespace-nowrap transition-colors ${active === t.id ? 'border-b-2 border-gold font-bold text-gold-dark' : 'text-gray-500 hover:text-gray-700'}`}>
+                        <button key={t.id} onClick={() => onChange(t.id)} className={`px-6 py-3 whitespace-nowrap transition-all ${active === t.id ? 'border-b-4 border-gold font-bold text-gold-dark bg-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}>
                             {t.label}
                         </button>
                     ))}
@@ -521,10 +574,14 @@
             const [invoiceRecord, setInvoiceRecord] = useState(null);
             const [contractNumber, setContractNumber] = useState('');
             const [paymentNumber, setPaymentNumber] = useState('');
+            
+            // PERMISSIONS
             const canViewAll = [UserRole.ADMIN, UserRole.DEPT_MANAGER, UserRole.SECTION_HEAD].includes(currentUser.role);
             const canSubmit = [UserRole.ADMIN, UserRole.USER].includes(currentUser.role);
-            const canApproveContractor = currentUser.role === UserRole.CONTRACTOR;
-            const canApproveManager = currentUser.role === UserRole.DEPT_MANAGER;
+            
+            // APPROVAL PERMISSIONS
+            const canApproveContractor = [UserRole.ADMIN, UserRole.CONTRACTOR].includes(currentUser.role);
+            const canApproveManager = [UserRole.ADMIN, UserRole.DEPT_MANAGER].includes(currentUser.role);
 
             useEffect(() => {
                 const all = DataService.facilities.getAll();
@@ -552,8 +609,8 @@
                 setContractNumber(fac.contractNumber);
                 setPaymentNumber(`PAY-${month}`);
 
-                const [y, m] = month.split('-');
-                const daysInMonth = new Date(parseInt(y), parseInt(m), 0).getDate();
+                // Real Calculation
+                const daysInMonth = 30; // Standard fixed month
                 const emps = DataService.employees.getAll().filter(e => e.facilityId === selectedFacilityId);
                 const evaluations = DataService.evaluations.getAll().filter(e => e.date.startsWith(month) && e.facilityId === selectedFacilityId);
                 
@@ -578,10 +635,11 @@
                     const totalExpectedDays = g.count * daysInMonth;
                     const actualDays = totalExpectedDays - totalAbsence;
                     
+                    // Precise Net Salary: Base - (Absence * Daily)
                     const netSalary = g.employees.reduce((sum, emp) => {
                         let empAbs = 0;
                         evaluations.forEach(ev => { if(ev.scores[`i1_${emp.id}`] === false) empAbs++; });
-                        return sum + ((daysInMonth - empAbs) * (emp.salary/30));
+                        return sum + Math.max(0, emp.salary - (empAbs * (emp.salary/30)));
                     }, 0);
 
                     const penaltyRate = role.includes('مشرف') ? 250 : 150;
@@ -627,6 +685,7 @@
                 DataService.invoices.save([...DataService.invoices.getAll().filter(i => i.month !== month || i.facilityId !== selectedFacilityId), rec]);
                 setInvoiceRecord(rec);
                 showToast('تم التقديم');
+                NotificationService.send('تقديم الفاتورة', `تم تقديم فاتورة شهر ${month}`);
             };
 
             const handleApprove = (role) => {
@@ -637,6 +696,7 @@
                 DataService.invoices.save([...DataService.invoices.getAll().filter(i => i.id !== up.id), up]);
                 setInvoiceRecord(up);
                 showToast('تم الاعتماد');
+                NotificationService.send('اعتماد الفاتورة', `تم اعتماد الفاتورة من قبل ${currentUser.name}`);
             };
 
             const handleEdit = () => {
@@ -675,8 +735,12 @@
                             {canSubmit && !invoiceRecord && <button onClick={handleSubmit} className="bg-blue-600 text-white px-4 py-2 rounded">تقديم</button>}
                             {canSubmit && invoiceRecord && invoiceRecord.status !== 'PENDING' && <button onClick={handleEdit} className="bg-blue-500 text-white px-4 py-2 rounded font-bold">تعديل</button>}
                             
-                            {canApproveContractor && invoiceRecord && !invoiceRecord.approvals.contractor && <button onClick={()=>handleApprove('CONTRACTOR')} className="bg-purple-600 text-white px-4 py-2 rounded">اعتماد المقاول</button>}
-                            {canApproveManager && invoiceRecord && !invoiceRecord.approvals.deptManager && <button onClick={()=>handleApprove('DEPT_MANAGER')} className="bg-gold text-white px-4 py-2 rounded">اعتماد مدير الإدارة</button>}
+                            {/* CONTRACTOR BUTTON */}
+                            {canApproveContractor && invoiceRecord && !invoiceRecord.approvals.contractor && <button onClick={()=>handleApprove('CONTRACTOR')} className="bg-purple-600 text-white px-4 py-2 rounded font-bold">اعتماد المقاول</button>}
+                            
+                            {/* DEPT MANAGER BUTTON - Ensuring it is visible if record exists and not yet approved by manager */}
+                            {canApproveManager && invoiceRecord && !invoiceRecord.approvals.deptManager && <button onClick={()=>handleApprove('DEPT_MANAGER')} className="bg-gold text-white px-4 py-2 rounded font-bold shadow-lg border-2 border-gold-dark">اعتماد مدير الإدارة</button>}
+                            
                             <button onClick={handleExport} className="bg-gray-800 text-white px-4 py-2 rounded">PDF</button>
                         </div>
                     </div>
@@ -816,11 +880,13 @@
                 const curV = updated.filter(v => v.date === date && v.facilityId === selectedFacility);
                 calcFailures(scores, curV);
                 showToast(`تم تسجيل مخالفة: ${vType.name}`, 'error');
+                NotificationService.send('تسجيل مخالفة', `تم تسجيل مخالفة على ${emp.name}`);
             };
 
             const handleSubmit = () => {
                 if(unresolved.length > 0) return alert('يجب تسجيل مخالفات للبنود غير المطابقة');
                 
+                // === SMART UPDATE: DELETE VIOLATION IF FIXED ===
                 if (isUpdateMode) {
                     const currentViolations = DataService.violations.getAll();
                     const violationsToDelete = [];
@@ -830,15 +896,24 @@
                             const item = items.find(i => i.id === iId);
                             const emp = employees.find(e => e.id === eId);
                             if (item && emp && item.linkedViolationId) {
-                                const vIndex = currentViolations.findIndex(v => v.date === date && v.facilityId === selectedFacility && v.violationTypeId === item.linkedViolationId && v.violationName.includes(emp.name) && v.status === 'OPEN');
+                                // Find violation for this specific employee, item, date, and facility
+                                const vIndex = currentViolations.findIndex(v => 
+                                    v.date === date && 
+                                    v.facilityId === selectedFacility && 
+                                    v.violationTypeId === item.linkedViolationId && 
+                                    v.violationName.includes(emp.name) && 
+                                    v.status === 'OPEN'
+                                );
                                 if (vIndex > -1) violationsToDelete.push(currentViolations[vIndex].id);
                             }
                         }
                     });
+                    
                     if (violationsToDelete.length > 0) {
                         const newViolationList = currentViolations.filter(v => !violationsToDelete.includes(v.id));
                         DataService.violations.save(newViolationList);
-                        showToast(`تم إلغاء ${violationsToDelete.length} مخالفات تم تصحيحها`);
+                        showToast(`تم حذف ${violationsToDelete.length} مخالفات تلقائياً لتصحيح الوضع`);
+                        NotificationService.send('تحديث ذكي', `تم حذف ${violationsToDelete.length} مخالفات لتصحيح الوضع`);
                     }
                 }
 
@@ -1071,8 +1146,10 @@
             const [stats, setStats] = useState({});
             const canViewAll = [UserRole.ADMIN, UserRole.DEPT_MANAGER, UserRole.SECTION_HEAD].includes(currentUser.role);
             const canSubmit = [UserRole.ADMIN, UserRole.USER].includes(currentUser.role);
-            const canSectionHead = currentUser.role === UserRole.SECTION_HEAD;
-            const canContractor = currentUser.role === UserRole.CONTRACTOR;
+            
+            // Allow Admin to act as Section Head or Contractor for testing
+            const canSectionHead = [UserRole.ADMIN, UserRole.SECTION_HEAD].includes(currentUser.role);
+            const canContractor = [UserRole.ADMIN, UserRole.CONTRACTOR].includes(currentUser.role);
 
             useEffect(() => {
                 const all = DataService.facilities.getAll();
@@ -1108,6 +1185,7 @@
                 DataService.monthlyReports.save([...DataService.monthlyReports.getAll().filter(r=>r.id!==rec.id), rec]);
                 setReport(rec);
                 showToast('تم الحفظ');
+                NotificationService.send('إشعار تقرير شهري', action === 'SUBMIT' ? 'تم تقديم التقرير' : 'تم اعتماد التقرير');
             };
 
             const handleExport = () => {
@@ -1125,10 +1203,16 @@
                         <div className="flex gap-2">
                             {canViewAll ? <select value={selectedFacility} onChange={e=>setSelectedFacility(e.target.value)} className="border p-2 rounded">{facilities.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}</select> : <span className="font-bold px-3">{fac?.name}</span>}
                             <input type="month" value={month} onChange={e=>setMonth(e.target.value)} className="border p-2 rounded"/>
-                            {canSubmit && (!report?.submitted) && <button onClick={()=>handleAction('SUBMIT')} className="bg-green-600 text-white px-4 rounded">تقديم</button>}
-                            {canSectionHead && report?.submitted && !report?.approvedBySectionHead && <button onClick={()=>handleAction('SECTION_HEAD')} className="bg-gold text-white px-4 rounded">اعتماد رئيس الشعبة</button>}
-                            {canContractor && report?.submitted && !report?.approvedByContractor && <button onClick={()=>handleAction('CONTRACTOR')} className="bg-purple-600 text-white px-4 rounded">اعتماد المقاول</button>}
-                            <button onClick={handleExport} className="bg-blue-600 text-white px-4 rounded">PDF</button>
+                            
+                            {canSubmit && (!report?.submitted) && <button onClick={()=>handleAction('SUBMIT')} className="bg-green-600 text-white px-4 rounded font-bold shadow">تقديم</button>}
+                            
+                            {/* SECTION HEAD BUTTON - Only if submitted and NOT yet approved by section head */}
+                            {canSectionHead && report?.submitted && !report?.approvedBySectionHead && <button onClick={()=>handleAction('SECTION_HEAD')} className="bg-gold text-white px-4 rounded font-bold shadow">اعتماد رئيس الشعبة</button>}
+                            
+                            {/* CONTRACTOR BUTTON - Only if submitted and NOT yet approved by contractor */}
+                            {canContractor && report?.submitted && !report?.approvedByContractor && <button onClick={()=>handleAction('CONTRACTOR')} className="bg-purple-600 text-white px-4 rounded font-bold shadow">اعتماد المقاول</button>}
+                            
+                            <button onClick={handleExport} className="bg-blue-600 text-white px-4 rounded"><i className="fa fa-print"></i> PDF</button>
                         </div>
                     </div>
                     <div id="monthly-report-print" className="bg-white mx-auto w-full max-w-[210mm] min-h-[297mm] p-4 text-xs font-sans text-black flex flex-col relative shadow-lg">
@@ -1178,8 +1262,13 @@
             
             const canViewAll = [UserRole.ADMIN, UserRole.DEPT_MANAGER, UserRole.SECTION_HEAD].includes(currentUser.role);
             const canSubmit = (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.USER) && (!record || record.status === 'PENDING');
-            const canApproveContractor = (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.CONTRACTOR) && (record?.status === 'SUBMITTED');
-            const canApproveManager = (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEPT_MANAGER) && (record?.status === 'SUBMITTED' || record?.status === 'CONTRACTOR_APPROVED');
+            
+            // Allow Admin to act as Contractor or Manager
+            const canApproveContractor = [UserRole.ADMIN, UserRole.CONTRACTOR].includes(currentUser.role) && (record?.status === 'SUBMITTED');
+            
+            // Manager Approval Logic: Can approve if Submitted OR Contractor Approved (Flexible)
+            const canApproveManager = [UserRole.ADMIN, UserRole.DEPT_MANAGER].includes(currentUser.role) && 
+                                      (record?.status === 'SUBMITTED' || record?.status === 'CONTRACTOR_APPROVED');
 
             useEffect(() => {
                 const all = DataService.facilities.getAll();
@@ -1219,6 +1308,7 @@
                 DataService.kpiReports.save([...all.filter(r=>r.id!==updated.id), updated]);
                 setRecord(updated);
                 showToast('تم الحفظ');
+                NotificationService.send('إشعار مؤشر الأداء', status === 'SUBMITTED' ? 'تم تقديم المؤشر' : 'تم اعتماد المؤشر');
             };
 
             const handleEdit = () => {
@@ -1245,11 +1335,15 @@
                         <div className="flex gap-2">
                             {canViewAll ? <select value={selectedFacility} onChange={e=>setSelectedFacility(e.target.value)} className="border p-2 rounded">{facilities.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}</select> : <span className="font-bold px-3">{fac?.name}</span>}
                             <input type="month" value={month} onChange={e=>setMonth(e.target.value)} className="border p-2 rounded"/>
-                            {canSubmit && <button onClick={()=>handleSave('SUBMITTED')} className="bg-green-600 text-white px-4 rounded">تقديم</button>}
+                            {canSubmit && <button onClick={()=>handleSave('SUBMITTED')} className="bg-green-600 text-white px-4 rounded font-bold shadow">تقديم للاعتماد</button>}
                             {canSubmit && record && record.status !== 'PENDING' && <button onClick={handleEdit} className="bg-blue-500 text-white px-4 rounded font-bold">تعديل</button>}
-                            {canApproveContractor && <button onClick={()=>handleSave('CONTRACTOR_APPROVED')} className="bg-purple-600 text-white px-4 rounded">اعتماد المقاول</button>}
-                            {canApproveManager && <button onClick={()=>handleSave('APPROVED')} className="bg-gold text-white px-4 rounded">اعتماد مدير الإدارة</button>}
-                            <button onClick={handleExport} className="bg-blue-600 text-white px-4 rounded">PDF</button>
+                            
+                            {canApproveContractor && !record?.signatures.contractor && <button onClick={()=>handleSave('CONTRACTOR_APPROVED')} className="bg-purple-600 text-white px-4 rounded font-bold shadow">اعتماد المقاول</button>}
+                            
+                            {/* DEPT MANAGER BUTTON */}
+                            {canApproveManager && !record?.signatures.deptManager && <button onClick={()=>handleSave('APPROVED')} className="bg-gold text-white px-4 rounded font-bold shadow border-2 border-gold-dark">اعتماد مدير الإدارة</button>}
+                            
+                            <button onClick={handleExport} className="bg-blue-600 text-white px-4 rounded"><i className="fa fa-print"></i> PDF</button>
                         </div>
                     </div>
                     <div id="kpi-report" className="bg-white mx-auto w-full max-w-[210mm] min-h-[297mm] p-4 text-xs font-sans text-black flex flex-col relative shadow-lg">
